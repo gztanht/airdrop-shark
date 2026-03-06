@@ -8,8 +8,8 @@
 - **版本**: 0.1.0
 - **作者**: @gztanht
 - **许可**: MIT
-- **GitHub**: https://github.com/gztanht/airdrop-alert
-- **ClawHub**: https://clawhub.com/skills/airdrop-alert
+- **GitHub**: https://github.com/gztanht/airdrop-shark
+- **ClawHub**: https://clawhub.com/skills/airdrop-shark
 
 ## 产品亮点
 
@@ -152,9 +152,9 @@ $ node scripts/reminder.mjs add --project zksync --date "2026-03-20"
 
 ## 支持渠道
 
-- **GitHub Issues**: https://github.com/gztanht/airdrop-alert/issues
+- **GitHub Issues**: https://github.com/gztanht/airdrop-shark/issues
 - **Telegram**: @gztanht
-- **ClawHub**: https://clawhub.com/skills/airdrop-alert
+- **ClawHub**: https://clawhub.com/skills/airdrop-shark
 
 ---
 

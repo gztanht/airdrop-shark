@@ -1,5 +1,5 @@
 {
-  "name": "airdrop-alert",
+  "name": "airdrop-shark",
   "version": "0.1.0",
   "description": "🪂 AirdropAlert - 空投提醒，追踪潜在空投资格",
   "main": "scripts/airdrop.mjs",

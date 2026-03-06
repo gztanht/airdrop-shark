@@ -6,7 +6,7 @@
 
 ```json
 {
-  "name": "airdrop-alert",
+  "name": "airdrop-shark",
   "version": "0.1.0",
   "description": "空投提醒技能 - 追踪潜在空投资格，提醒快照和时间",
   "author": "@gztanht",
