@@ -1,0 +1,28 @@
+{
+  "name": "airdrop-shark",
+  "displayName": "🪂 AirdropShark",
+  "version": "1.0.0",
+  "description": "空投资格追踪专家 - 8 个高质量项目列表，快照提醒，交互指南，抓住每个空投机会",
+  "author": "@gztanht",
+  "license": "MIT",
+  "pricing": {
+    "model": "freemium",
+    "freeQuota": 5,
+    "freeQuotaPeriod": "daily",
+    "unlimitedPrice": "0.5",
+    "unlimitedCurrency": "USDT"
+  },
+  "category": "airdrop",
+  "tags": ["airdrop", "crypto", "eligibility", "reminder", "guide", "defi"],
+  "features": [
+    "8 个空投项目追踪",
+    "快照日期提醒",
+    "详细交互指南",
+    "资格检查",
+    "优先级评级"
+  ],
+  "repository": "https://github.com/gztanht/airdrop-shark",
+  "homepage": "https://clawhub.com/skills/airdrop-shark",
+  "createdAt": "2026-03-06",
+  "updatedAt": "2026-03-09"
+}

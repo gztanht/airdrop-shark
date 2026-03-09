@@ -1,187 +1,393 @@
 #!/usr/bin/env node
+
 /**
- * 🪂 AirdropAlert - 空投项目列表
- * 显示所有潜在空投项目
+ * 🪂 AirdropShark - Airdrop List
+ * 查看潜在空投项目列表
  */
 
-import fs from 'fs';
-import path from 'path';
+import { readFile, writeFile } from 'fs/promises';
+import { existsSync } from 'fs';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CONFIG_FILE = path.join(__dirname, '..', 'config', 'projects.json');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DATA_FILE = join(__dirname, '..', 'data', 'airdrops.json');
 
-// 空投项目数据库
-const DEFAULT_PROJECTS = {
-    'layerzero': {
-        name: 'LayerZero',
-        chain: '多链',
-        priority: 'high',
-        snapshot: '2026-Q2',
-        expectedValue: '$2000-5000',
-        difficulty: '中',
-        requirements: ['跨链交易 > 5 次', '使用 > 3 条不同链', '总交易量 > $1000'],
-        guide: 'https://layerzero.network'
+/**
+ * 空投项目数据
+ */
+const DEFAULT_AIRDROPS = [
+  {
+    id: 1,
+    name: 'LayerZero',
+    symbol: 'ZRO',
+    chain: '多链',
+    category: '跨链桥',
+    priority: 'high',
+    status: 'upcoming',
+    snapshotDate: '2026-Q2',
+    expectedValue: '$2000-5000',
+    difficulty: 'medium',
+    requirements: {
+      bridgeCount: 5,
+      chains: 3,
+      volume: 1000,
+      recentActivity: 30
     },
-    'zksync': {
-        name: 'zkSync Era',
-        chain: 'Ethereum',
-        priority: 'high',
-        snapshot: '2026-Q1',
-        expectedValue: '$1000-3000',
-        difficulty: '低',
-        requirements: ['主网交互 > 3 次', '持有 NFT', '使用桥'],
-        guide: 'https://zksync.io'
+    description: '跨链协议龙头，预计空投价值高',
+    website: 'https://layerzero.network',
+    twitter: '@LayerZero_Labs'
+  },
+  {
+    id: 2,
+    name: 'zkSync Era',
+    symbol: 'ZK',
+    chain: 'Ethereum L2',
+    category: 'Layer2',
+    priority: 'high',
+    status: 'upcoming',
+    snapshotDate: '2026-Q1',
+    expectedValue: '$1000-3000',
+    difficulty: 'low',
+    requirements: {
+      transactions: 10,
+      volume: 100,
+      contracts: 5,
+      recentActivity: 30
     },
-    'starknet': {
-        name: 'Starknet',
-        chain: 'Starknet',
-        priority: 'medium',
-        snapshot: '已完成',
-        expectedValue: '$500-2000',
-        difficulty: '低',
-        requirements: ['主网交互', '持有代币'],
-        guide: 'https://starknet.io'
+    description: 'ZK Rollup 龙头，交互简单',
+    website: 'https://zksync.io',
+    twitter: '@zksync'
+  },
+  {
+    id: 3,
+    name: 'Starknet',
+    symbol: 'STRK',
+    chain: 'Starknet',
+    category: 'Layer2',
+    priority: 'medium',
+    status: 'completed',
+    snapshotDate: '2026-01',
+    expectedValue: '$500-2000',
+    difficulty: 'low',
+    requirements: {
+      transactions: 5,
+      volume: 50,
+      contracts: 3
     },
-    'scroll': {
-        name: 'Scroll',
-        chain: 'Ethereum',
-        priority: 'low',
-        snapshot: '2026-Q3',
-        expectedValue: '$300-1000',
-        difficulty: '中',
-        requirements: ['主网交互 > 5 次', '使用桥'],
-        guide: 'https://scroll.io'
+    description: '已完成快照，等待发币',
+    website: 'https://starknet.io',
+    twitter: '@Starknet'
+  },
+  {
+    id: 4,
+    name: 'Scroll',
+    symbol: 'SCR',
+    chain: 'Ethereum L2',
+    category: 'Layer2',
+    priority: 'medium',
+    status: 'upcoming',
+    snapshotDate: '2026-Q3',
+    expectedValue: '$300-1000',
+    difficulty: 'medium',
+    requirements: {
+      transactions: 15,
+      volume: 200,
+      contracts: 5,
+      bridge: true
     },
-    'linea': {
-        name: 'Linea',
-        chain: 'Ethereum',
-        priority: 'low',
-        snapshot: '2026-Q2',
-        expectedValue: '$300-800',
-        difficulty: '低',
-        requirements: ['主网交互', '使用桥'],
-        guide: 'https://linea.build'
+    description: 'ZK EVM 新贵，生态快速发展',
+    website: 'https://scroll.io',
+    twitter: '@Scroll_ZKP'
+  },
+  {
+    id: 5,
+    name: 'Linea',
+    symbol: 'LINEA',
+    chain: 'Ethereum L2',
+    category: 'Layer2',
+    priority: 'low',
+    status: 'upcoming',
+    snapshotDate: '2026-Q3',
+    expectedValue: '$300-800',
+    difficulty: 'low',
+    requirements: {
+      transactions: 10,
+      volume: 100,
+      voyage: true
     },
-    'base': {
-        name: 'Base',
-        chain: 'Base',
-        priority: 'low',
-        snapshot: '2026-Q3',
-        expectedValue: '$200-600',
-        difficulty: '低',
-        requirements: ['主网交互', ' bridge 资产'],
-        guide: 'https://base.org'
+    description: 'ConsenSys 旗下 L2',
+    website: 'https://linea.build',
+    twitter: '@LineaBuild'
+  },
+  {
+    id: 6,
+    name: 'Base',
+    symbol: 'BASE',
+    chain: 'Base',
+    category: 'Layer2',
+    priority: 'low',
+    status: 'upcoming',
+    snapshotDate: '2026-Q4',
+    expectedValue: '$200-600',
+    difficulty: 'low',
+    requirements: {
+      transactions: 10,
+      volume: 100,
+      contracts: 3
     },
-    'metamask': {
-        name: 'MetaMask',
-        chain: '多链',
-        priority: 'high',
-        snapshot: '2026-Q2',
-        expectedValue: '$1000-5000',
-        difficulty: '中',
-        requirements: ['使用 Swap', '使用桥', '活跃 > 3 个月'],
-        guide: 'https://metamask.io'
+    description: 'Coinbase 旗下 L2',
+    website: 'https://base.org',
+    twitter: '@Base'
+  },
+  {
+    id: 7,
+    name: 'Polyhedra',
+    symbol: 'ZKJ',
+    chain: '多链',
+    category: '跨链桥',
+    priority: 'medium',
+    status: 'upcoming',
+    snapshotDate: '2026-Q2',
+    expectedValue: '$500-1500',
+    difficulty: 'medium',
+    requirements: {
+      bridgeCount: 3,
+      volume: 500,
+      nft: true
     },
-    'rabbit': {
-        name: 'RabbitHole',
-        chain: '多链',
-        priority: 'medium',
-        snapshot: '2026-Q2',
-        expectedValue: '$200-800',
-        difficulty: '低',
-        requirements: ['完成 Quests', '持有 NFT'],
-        guide: 'https://rabbithole.gg'
+    description: 'ZK 跨链协议',
+    website: 'https://polyhedra.network',
+    twitter: '@PolyhedraZK'
+  },
+  {
+    id: 8,
+    name: 'EigenLayer',
+    symbol: 'EIGEN',
+    chain: 'Ethereum',
+    category: 'Restaking',
+    priority: 'high',
+    status: 'upcoming',
+    snapshotDate: '2026-Q2',
+    expectedValue: '$1000-3000',
+    difficulty: 'medium',
+    requirements: {
+      stake: true,
+      amount: 0.1,
+      operators: 2
+    },
+    description: 'Restaking 龙头，质押 ETH 参与',
+    website: 'https://eigenlayer.xyz',
+    twitter: '@eigenlayer'
+  }
+];
+
+/**
+ * 加载空投数据
+ */
+async function loadAirdrops() {
+  try {
+    if (!existsSync(DATA_FILE)) {
+      // 保存默认数据
+      await saveAirdrops({ airdrops: DEFAULT_AIRDROPS, lastUpdate: new Date().toISOString() });
+      return { airdrops: DEFAULT_AIRDROPS, lastUpdate: new Date().toISOString() };
     }
-};
-
-// 优先级标记
-const PRIORITY_ICONS = {
-    high: '🔴',
-    medium: '🟡',
-    low: '🟢'
-};
-
-// 加载项目配置
-function loadProjects() {
-    try {
-        if (fs.existsSync(CONFIG_FILE)) {
-            const content = fs.readFileSync(CONFIG_FILE, 'utf8');
-            return JSON.parse(content);
-        }
-    } catch (e) {
-        console.error('⚠️  加载配置文件失败，使用默认配置');
-    }
-    return DEFAULT_PROJECTS;
+    const data = await readFile(DATA_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('⚠️  加载数据失败，使用默认数据');
+    return { airdrops: DEFAULT_AIRDROPS, lastUpdate: new Date().toISOString() };
+  }
 }
 
-// 显示项目列表
-function showProjects(priority = null, limit = 20) {
-    const projects = loadProjects();
-    
-    let list = Object.entries(projects);
-    
-    // 按优先级筛选
-    if (priority) {
-        list = list.filter(([_, p]) => p.priority === priority);
+/**
+ * 保存空投数据
+ */
+async function saveAirdrops(data) {
+  try {
+    const dir = dirname(DATA_FILE);
+    if (!existsSync(dir)) {
+      await writeFile(dir, '', 'utf-8');
     }
-    
-    // 限制数量
-    list = list.slice(0, limit);
-    
-    if (list.length === 0) {
-        console.log('❌ 暂无符合条件的空投项目');
-        return;
-    }
-    
-    console.log('\n🪂 AirdropAlert - 潜在空投项目\n');
-    console.log(`优先级  项目              链           快照时间    预期价值    难度`);
-    console.log(`─────────────────────────────────────────────────────────────────────`);
-    
-    list.forEach(([key, p]) => {
-        const icon = PRIORITY_ICONS[p.priority] || '⚪';
-        const priorityStr = `${icon} ${p.priority === 'high' ? '高' : p.priority === 'medium' ? '中' : '低'}`.padEnd(6);
-        const name = p.name.padEnd(16);
-        const chain = p.chain.padEnd(12);
-        const snapshot = p.snapshot.padEnd(10);
-        const value = p.expectedValue.padEnd(12);
-        const difficulty = p.difficulty.padEnd(6);
-        
-        console.log(`${priorityStr} ${name} ${chain} ${snapshot} ${value} ${difficulty}`);
-    });
-    
-    console.log(`\n💡 提示:`);
-    console.log(`   node scripts/airdrop.mjs --priority high  # 只看高优先级`);
-    console.log(`   node scripts/airdrop.mjs --limit 5        # 限制显示 5 个`);
-    console.log(`   node scripts/eligibility.mjs layerzero    # 检查资格`);
-    console.log(`\n💰 赞助：USDT: 0x33f943e71c7b7c4e88802a68e62cca91dab65ad9`);
-    console.log(`\n🪂 AirdropAlert v0.1.0 - Never Miss an Airdrop`);
+    await writeFile(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    return true;
+  } catch (error) {
+    console.error('❌ 保存数据失败:', error.message);
+    return false;
+  }
 }
 
-// 主函数
-const args = process.argv.slice(2);
+/**
+ * 显示空投列表
+ */
+function printAirdrops(airdrops, options = {}) {
+  const { priority, status, chain } = options;
 
-if (args.includes('--help') || args.includes('-h')) {
-    console.log(`
-🪂 AirdropAlert - 空投提醒技能
+  let filtered = airdrops;
+
+  if (priority) {
+    filtered = filtered.filter(a => a.priority === priority);
+  }
+
+  if (status) {
+    filtered = filtered.filter(a => a.status === status);
+  }
+
+  if (chain) {
+    filtered = filtered.filter(a => a.chain.toLowerCase().includes(chain.toLowerCase()));
+  }
+
+  if (filtered.length === 0) {
+    console.log('📋 没有找到符合条件的空投项目\n');
+    return;
+  }
+
+  console.log('🪂 AirdropShark - 潜在空投项目\n');
+  console.log('─'.repeat(100));
+  console.log(
+    '优先级'.padEnd(8) +
+    '项目'.padEnd(18) +
+    '链'.padEnd(18) +
+    '快照时间'.padEnd(15) +
+    '预期价值'.padEnd(20) +
+    '难度'
+  );
+  console.log('─'.repeat(100));
+
+  filtered.forEach(airdrop => {
+    const priorityIcon = getPriorityIcon(airdrop.priority);
+    const statusIcon = getStatusIcon(airdrop.status);
+    console.log(
+      `${priorityIcon} ${airdrop.priority.padEnd(5)} ` +
+      `${airdrop.name.padEnd(16)} ` +
+      `${airdrop.chain.padEnd(16)} ` +
+      `${airdrop.snapshotDate.padEnd(13)} ` +
+      `${airdrop.expectedValue.padEnd(18)} ` +
+      `${getDifficultyIcon(airdrop.difficulty)} ${airdrop.difficulty}`
+    );
+  });
+
+  console.log('─'.repeat(100));
+  console.log(`\n总计：${filtered.length} 个项目\n`);
+
+  // 显示操作提示
+  if (filtered.length > 0) {
+    console.log('💡 操作提示:');
+    console.log('   检查资格：node scripts/eligibility.mjs <项目名> --address 0x...');
+    console.log('   设置提醒：node scripts/reminder.mjs add --project <项目名> --date YYYY-MM-DD');
+    console.log('   查看指南：node scripts/guide.mjs <项目名>');
+    console.log('');
+    console.log('💡 筛选选项:');
+    console.log('   --priority high|medium|low  按优先级筛选');
+    console.log('   --status upcoming|completed 按状态筛选');
+    console.log('   --chain <链名>              按链筛选');
+  }
+}
+
+/**
+ * 获取优先级图标
+ */
+function getPriorityIcon(priority) {
+  switch (priority) {
+    case 'high': return '🔴';
+    case 'medium': return '🟡';
+    case 'low': return '🟢';
+    default: return '⚪';
+  }
+}
+
+/**
+ * 获取状态图标
+ */
+function getStatusIcon(status) {
+  switch (status) {
+    case 'upcoming': return '⏳';
+    case 'completed': return '✅';
+    case 'claimed': return '💰';
+    default: return '❓';
+  }
+}
+
+/**
+ * 获取难度图标
+ */
+function getDifficultyIcon(difficulty) {
+  switch (difficulty) {
+    case 'low': return '🟢';
+    case 'medium': return '🟡';
+    case 'high': return '🔴';
+    default: return '⚪';
+  }
+}
+
+/**
+ * 显示帮助
+ */
+function showHelp() {
+  console.log(`
+🪂 AirdropShark - 空投项目列表
 
 用法:
-  node scripts/airdrop.mjs              # 查看所有空投项目
-  node scripts/airdrop.mjs --priority high  # 只看高优先级
-  node scripts/airdrop.mjs --limit 5    # 限制显示 5 个
+  node scripts/airdrop.mjs [选项]
 
 选项:
-  --help, -h          显示帮助
-  --priority [high|medium|low]  按优先级筛选
-  --limit N           限制显示数量
+  --priority high|medium|low   按优先级筛选
+  --status upcoming|completed  按状态筛选
+  --chain <链名>               按链筛选
+  --help                       显示帮助
+
+示例:
+  # 查看所有空投
+  node scripts/airdrop.mjs
+
+  # 只看高优先级
+  node scripts/airdrop.mjs --priority high
+
+  # 只看 Layer2 项目
+  node scripts/airdrop.mjs --chain layer2
+
+  # 看即将快照的项目
+  node scripts/airdrop.mjs --status upcoming
+
+相关命令:
+  eligibility.mjs <项目> --address 0x...  检查资格
+  reminder.mjs add --project <项目>       设置提醒
+  guide.mjs <项目>                       查看交互指南
 `);
-    process.exit(0);
 }
 
-const priorityIndex = args.indexOf('--priority');
-const priority = priorityIndex > -1 ? args[priorityIndex + 1] : null;
+/**
+ * 解析命令行参数
+ */
+function parseArgs(args) {
+  const options = {};
+  for (let i = 0; i < args.length; i++) {
+    if (args[i].startsWith('--')) {
+      const key = args[i].slice(2);
+      const value = args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : true;
+      options[key] = value;
+      i++;
+    }
+  }
+  return options;
+}
 
-const limitIndex = args.indexOf('--limit');
-const limit = limitIndex > -1 ? parseInt(args[limitIndex + 1]) : 20;
+/**
+ * 主函数
+ */
+async function main() {
+  const args = process.argv.slice(2);
 
-showProjects(priority, limit);
+  if (args.includes('--help') || args.includes('-h')) {
+    showHelp();
+    return;
+  }
+
+  const options = parseArgs(args);
+  const data = await loadAirdrops();
+
+  console.log(''); // 空行
+  printAirdrops(data.airdrops, options);
+}
+
+main().catch(console.error);

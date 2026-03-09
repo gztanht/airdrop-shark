@@ -1,14 +1,20 @@
 {
   "name": "airdrop-shark",
-  "version": "0.1.0",
-  "description": "🪂 AirdropAlert - 空投提醒，追踪潜在空投资格",
+  "version": "1.0.0",
+  "description": "🪂 AirdropShark - 空投监控，8 个项目追踪 + 快照提醒 + 交互指南",
   "main": "scripts/airdrop.mjs",
   "type": "module",
   "scripts": {
     "airdrop": "node scripts/airdrop.mjs",
     "eligibility": "node scripts/eligibility.mjs",
     "reminder": "node scripts/reminder.mjs",
+    "guide": "node scripts/guide.mjs",
     "test": "node scripts/airdrop.mjs"
+  },
+  "bin": {
+    "airdrop-shark": "scripts/airdrop.mjs",
+    "airdrop-check": "scripts/eligibility.mjs",
+    "airdrop-reminder": "scripts/reminder.mjs"
   },
   "keywords": [
     "airdrop",
